@@ -4,7 +4,7 @@
 2. Unzip the folder and drag and drop **radiocast4fivem-download** into your servers **resources** folder.
 3. Open **server.cfg** and put in
 ```txt
-ensure radiocast4fivem
+ensure Radiocast4fivem
 ```
 to make sure that radiocast starts when your server starts. 
 
