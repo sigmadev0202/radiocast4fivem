@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radiocast</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="radiocast-container" id="app" style="display: none;">
+        <header class="top-bar">
+            <div class="logo">
+                <img src="radiocastlogo.webp" alt="Radiocast Logo" style="height: 24px; width: auto;">
+                <span>Radiocast</span>
+            </div>
+            
+            <div class="search-container" style="flex: 1; max-width: 400px; margin: 0 20px; position: relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px;"></i>
+                <input type="text" id="station-search" placeholder="Search stations, songs, or artists..." style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 8px 15px 8px 35px; color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s;">
+            </div>
+            
+            <div class="top-bar-right" style="position: relative; display: flex; align-items: center; gap: 15px;">
+                <select id="output-select" class="output-dropdown" style="display: none;">
+                    <option value="headphones">Headphones</option>
+                    <option value="vehicle" id="vehicle-option">Vehicle</option>
+                </select>
+                <button class="settings-btn" id="settings-btn"><i class="fa-solid fa-gear"></i></button>
+                <button class="close-btn" id="close-btn"><i class="fa-solid fa-xmark"></i></button>
+                
+                <div class="settings-dropdown" id="settings-dropdown" style="display: none;">
+                    <div class="setting-item">
+                        <label for="toggle-hud">Show Car Overlay</label>
+                        <input type="checkbox" id="toggle-hud" checked>
+                    </div>
+                    <div class="setting-item">
+                        <label for="toggle-mute">Mute All Radiocast</label>
+                        <input type="checkbox" id="toggle-mute">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <div class="stations-grid" id="stations-list">
+                <!-- Stations injected here -->
+            </div>
+        </main>
+
+        <footer class="player-bar" id="player-bar" style="display: none;">
+            <div class="now-playing-info">
+                <div class="station-thumb" id="np-thumb"></div>
+                <div class="np-text">
+                    <div class="np-title" id="np-title">No Song Playing</div>
+                    <div class="np-artist" id="np-artist">Select a station</div>
+                </div>
+            </div>
+            <div class="player-controls">
+                <button class="control-btn" id="play-pause-btn"><i class="fa-solid fa-play" style="margin-left: 2px;"></i></button>
+            </div>
+            <div class="volume-control">
+                <i class="fa-solid fa-volume-low"></i>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
+            </div>
+        </footer>
+    </div>
+
+    <!-- HUD Overlay for vehicle radio -->
+    <div class="car-radio-hud" id="car-radio-hud" style="display: none;">
+        <div class="hud-thumb" id="hud-thumb"></div>
+        <div class="hud-info">
+            <div class="hud-text-container hud-station"><span id="hud-station">Station Name</span></div>
+            <div class="hud-text-container hud-title"><span id="hud-title">Song Title</span></div>
+            <div class="hud-text-container hud-artist"><span id="hud-artist">Artist</span></div>
+            <div class="hud-powered" style="color: rgba(255, 255, 255, 0.4); font-size: 10px; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">Powered by Radiocast</div>
+        </div>
+    </div>
+    
+    <audio id="radio-audio" style="display:none;"></audio>
+    <script src="script.js"></script>
+</body>
+</html>
