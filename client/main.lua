@@ -116,7 +116,6 @@ CreateThread(function()
         local coords = GetEntityCoords(ped)
         local currentVeh = GetVehiclePedIsIn(ped, false)
         
-        -- 1. Sync 3D Audio
         local vehicles = GetGamePool('CVehicle')
         local nearbyRadios = {}
         
@@ -159,7 +158,6 @@ CreateThread(function()
             maxDist = maxDistance
         })
         
-        -- 2. HUD Logic for Current Vehicle
         if currentVeh ~= 0 and NetworkGetEntityIsNetworked(currentVeh) then
             local netId = NetworkGetNetworkIdFromEntity(currentVeh)
             if netId and netId > 0 then
