@@ -51,7 +51,6 @@ RegisterNetEvent("Radiocast:GetStations", function()
             return
         end
 
-        -- Try fetching immediately if cache is empty
         PerformHttpRequest("https://panel.radiocast.net/api/stations", function(err, text, headers)
             print("^3[Radiocast4Fivem] Attempting to fetch stations from API (Triggered by player)...^7")
             if err == 200 then
