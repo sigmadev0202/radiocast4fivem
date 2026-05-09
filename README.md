@@ -5,6 +5,7 @@ The official FiveM integration script for Radiocast. Access 20+ user-created rad
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Discord](https://img.shields.io/discord/g2twJYQrG8?label=Discord&logo=discord)](https://discord.gg/g2twJYQrG8)
 
+> ⚠️ **Important**: You must comply with [Radiocast's API Usage Policy.](https://radiocast.net/api-usage)
 ---
 
 ## 📋 Table of Contents
