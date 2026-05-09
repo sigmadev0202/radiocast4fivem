@@ -1,6 +1,11 @@
 # Radiocast FiveM Integration
 This repository houses the official Radiocast integration. Radiocast stations are user-generated and are reliable, with over 99.9% historical uptime. Integrating Radiocast stations into your FiveM server is easy, and increases immersiveness. Plus, it allows your players to create their own station for everyone in the server to listen to. The best part? Using this integration is completely free! 
 
+## ⚠️ Prerequisites
+You will need to obtain a free API key from Radiocast by contacting us on [Discord](https://discord.gg/g2twJYQrG8), through our [support panel](https://billing.radiocast.net/support), or by shooting us an email requesting an API key with a description of your usecase.
+
+Note that abuse will result in termination, and that you may not share your API key with anyone.
+
 ## Installation Instructions
 
 1. **Download the release [here.](https://github.com/sigmadev0202/radiocast4fivem/releases/tag/download)**
