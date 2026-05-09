@@ -1,6 +1,6 @@
 # 🎙️ Radiocast FiveM Integration
 
-A professional FiveM radio integration script powered by Radiocast. Access thousands of user-curated radio stations with exceptional reliability (99.9%+ uptime) directly in your FiveM server.
+A professional FiveM radio integration script powered by Radiocast. Access 20+ user-created radio stations with exceptional reliability (99.9%+ uptime) directly in your FiveM server.
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Discord](https://img.shields.io/discord/g2twJYQrG8?label=Discord&logo=discord)](https://discord.gg/g2twJYQrG8)
@@ -24,13 +24,13 @@ A professional FiveM radio integration script powered by Radiocast. Access thous
 
 ## ✨ Features
 
-- **Massive Station Library**: Access thousands of Radiocast stations
+- **Access to Station Library**: Access 20+ Radiocast stations
 - **High Reliability**: 99.9%+ historical uptime
 - **Auto-Updater**: Automatic resource updates with optional restart capability
 - **In-Game UI**: Intuitive radio station selector panel
-- **Car Overlay**: Vehicle-integrated radio display
-- **Easy Integration**: Simple installation and configuration
-- **Multi-Language Support**: Accessible to diverse server communities
+- **Car Overlay**: Non-intrusive metadata display
+- **Easy Integration**: Simple installation and configuration process
+- **In-Car Synchronization**: Current station and volume settings are synchronized in realtime for everyone inside of the vehicle
 
 ---
 
@@ -46,7 +46,7 @@ Choose one of the following methods to get your free API key:
 
 1. **Discord**: Join our [community server](https://discord.gg/g2twJYQrG8) and request an API key
 2. **Support Panel**: Visit our [billing support panel](https://billing.radiocast.net/support)
-3. **Email**: Contact us directly through our support channels
+3. **Email**: Contact us directly at [contact@radiocast.net](mailto:contact@radiocast.net)
 
 > ⚠️ **Important**: API key abuse will result in immediate termination. Do not share your API key with anyone.
 
@@ -112,13 +112,6 @@ Refer to the included configuration documentation for detailed options.
 ```
 /radiocast - Opens the Radiocast stations panel
 ```
-
-### Features
-- Browse and search available radio stations
-- Quick station switching
-- Volume control
-- Car-specific radio overlay
-- Station favorites
 
 ---
 
@@ -202,12 +195,6 @@ Be mindful of API rate limits. Excessive requests may result in API key terminat
 - **Discord Community**: [Join us](https://discord.gg/g2twJYQrG8) for quick support
 - **Support Panel**: [billing.radiocast.net/support](https://billing.radiocast.net/support)
 - **GitHub Issues**: Report bugs and request features
-
-### Common Issues
-
-- [Rate limiting solutions](https://billing.radiocast.net/support)
-- [Configuration help](https://discord.gg/g2twJYQrG8)
-- [Integration troubleshooting](https://billing.radiocast.net/support)
 
 ---
 
