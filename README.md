@@ -38,16 +38,12 @@ The official FiveM integration script for Radiocast. Access 20+ user-created rad
 ## ⚠️ Prerequisites
 
 ### Required
-- **FiveM Server** (Latest version recommended)
+- **FiveM Server**
 - **Radiocast API Key** (Free)
 
 ### Obtaining Your API Key
 
-Choose one of the following methods to get your free API key:
-
-1. **Discord**: Join our [community server](https://discord.gg/g2twJYQrG8) and request an API key
-2. **Support Panel**: Visit our [billing support panel](https://billing.radiocast.net/support)
-3. **Email**: Contact us directly at [contact@radiocast.net](mailto:contact@radiocast.net)
+You can obtain a free API key from our [billing panel](https://billing.radiocast.net) in the profile settings menu.
 
 > ⚠️ **Important**: API key abuse will result in immediate termination. Do not share your API key with anyone.
 
