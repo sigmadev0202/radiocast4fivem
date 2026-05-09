@@ -1,6 +1,6 @@
 # 🎙️ Radiocast FiveM Integration
 
-A professional FiveM radio integration script powered by Radiocast. Access 20+ user-created radio stations with exceptional reliability (99.9%+ uptime) directly in your FiveM server.
+The official FiveM integration script for Radiocast. Access 20+ user-created radio stations with exceptional reliability (99.9%+ uptime) directly in your FiveM server.
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Discord](https://img.shields.io/discord/g2twJYQrG8?label=Discord&logo=discord)](https://discord.gg/g2twJYQrG8)
