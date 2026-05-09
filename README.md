@@ -139,18 +139,16 @@ Refer to the included configuration documentation for detailed options.
 ### Architecture
 
 This integration is built with:
-- **JavaScript** (38.1%) - API communication and core logic
-- **Lua** (37.3%) - FiveM scripting framework
-- **CSS** (15%) - UI styling and design
-- **HTML** (9.6%) - Interface markup
+- **JavaScript** - API communication and core logic
+- **Lua** - FiveM scripting framework
+- **CSS** - UI styling and design
+- **HTML** - Interface markup
 
 ### API Communication
 
 The resource communicates with Radiocast servers via REST API to:
 - Fetch available stations
 - Stream station data
-- Handle playback controls
-- Manage user preferences
 
 ### Rate Limiting
 
