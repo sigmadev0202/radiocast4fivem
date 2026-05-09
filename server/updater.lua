@@ -1,5 +1,5 @@
 local repoBranch = "updater"
-local repoUser = "sigmadev0202"
+local repoUser = "yourcpuisoverheating"
 local repoName = "radiocast4fivem"
 local checkInterval = 1 * 60 * 1000
 
