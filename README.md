@@ -98,10 +98,9 @@ RADIOCAST_API_KEY = "your_api_key_here"
 You can customize various aspects:
 - UI theme and colors (CSS)
 - Command names and permissions
-- Default stations
 - Overlay positioning
 
-Refer to the included configuration documentation for detailed options.
+This must be done by altering the code at this time.
 
 ---
 
