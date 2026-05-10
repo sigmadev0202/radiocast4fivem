@@ -1,4 +1,6 @@
 local stationsCache = nil
+local stationsCacheTime = 0
+local STATIONS_CACHE_TTL = 300 -- 5 minutes in seconds
 
 local function FetchStations()
     if not ServerConfig.APIKey or ServerConfig.APIKey == "YOUR_API_KEY_HERE" then
@@ -6,12 +8,13 @@ local function FetchStations()
         return
     end
 
-    PerformHttpRequest("https://panel.radiocast.net/api/stations", function(err, text, headers)
+    PerformHttpRequest("https://billing.radiocast.net/radiocastproxy/stations", function(err, text, headers)
         print("^3[Radiocast4Fivem] Attempting to fetch stations from API...^7")
         if err == 200 then
             local data = json.decode(text)
             if data then
                 stationsCache = data
+                stationsCacheTime = os.time()
                 print("^2[Radiocast4Fivem] SUCCESS: Loaded " .. #data .. " stations.^7")
             else
                 print("^1[Radiocast4Fivem] ERROR: Received 200 OK but JSON was invalid. Response: ^7\n" .. tostring(text))
@@ -19,7 +22,7 @@ local function FetchStations()
         else
             print("^1==========================================================^7")
             print("^1[Radiocast4Fivem] API REQUEST FAILED^7")
-            print("^1URL: ^3https://panel.radiocast.net/api/stations^7")
+            print("^1URL: ^3https://billing.radiocast.net/radiocastproxy/stations^7")
             print("^1HTTP Status Code: ^3" .. tostring(err) .. "^7")
             print("^1Response Headers: ^3" .. json.encode(headers or {}) .. "^7")
             print("^1Response Body: ^7")
@@ -43,41 +46,48 @@ end)
 
 RegisterNetEvent("Radiocast:GetStations", function()
     local src = source
-    if stationsCache then
-        TriggerClientEvent("Radiocast:ReceiveStations", src, stationsCache)
-    else
-        if not ServerConfig.APIKey or ServerConfig.APIKey == "YOUR_API_KEY_HERE" then
-            TriggerClientEvent("Radiocast:ReceiveStations", src, {})
-            return
-        end
 
-        PerformHttpRequest("https://panel.radiocast.net/api/stations", function(err, text, headers)
-            print("^3[Radiocast4Fivem] Attempting to fetch stations from API (Triggered by player)...^7")
-            if err == 200 then
-                local data = json.decode(text)
-                if data then
-                    stationsCache = data
-                    print("^2[Radiocast4Fivem] SUCCESS: Loaded " .. #data .. " stations.^7")
-                    TriggerClientEvent("Radiocast:ReceiveStations", src, stationsCache)
-                else
-                    TriggerClientEvent("Radiocast:ReceiveStations", src, {})
-                end
-            else
-                print("^1==========================================================^7")
-                print("^1[Radiocast4Fivem] API REQUEST FAILED (Player Triggered)^7")
-                print("^1HTTP Status Code: ^3" .. tostring(err) .. "^7")
-                print("^1Response Body: ^7")
-                print(tostring(text) or "No response body received.")
-                print("^1==========================================================^7")
-                TriggerClientEvent("Radiocast:ReceiveStations", src, {})
-            end
-        end, "GET", "", {
-            ["Authorization"] = "Bearer " .. ServerConfig.APIKey,
-            ["X-API-Key"] = ServerConfig.APIKey,
-            ["Accept"] = "application/json",
-            ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        })
+    -- Serve from cache if it is still fresh
+    if stationsCache and (os.time() - stationsCacheTime) < STATIONS_CACHE_TTL then
+        TriggerClientEvent("Radiocast:ReceiveStations", src, stationsCache)
+        return
     end
+
+    if not ServerConfig.APIKey or ServerConfig.APIKey == "YOUR_API_KEY_HERE" then
+        TriggerClientEvent("Radiocast:ReceiveStations", src, {})
+        return
+    end
+
+    -- Stale or empty cache — refresh from API
+    PerformHttpRequest("https://billing.radiocast.net/radiocastproxy/stations", function(err, text, headers)
+        print("^3[Radiocast4Fivem] Fetching stations from API (cache miss / expired)...^7")
+        if err == 200 then
+            local data = json.decode(text)
+            if data then
+                stationsCache = data
+                stationsCacheTime = os.time()
+                print("^2[Radiocast4Fivem] SUCCESS: Loaded " .. #data .. " stations (cache refreshed).^7")
+                TriggerClientEvent("Radiocast:ReceiveStations", src, stationsCache)
+            else
+                -- Return stale cache rather than empty if we have it
+                TriggerClientEvent("Radiocast:ReceiveStations", src, stationsCache or {})
+            end
+        else
+            print("^1==========================================================^7")
+            print("^1[Radiocast4Fivem] API REQUEST FAILED (Player Triggered)^7")
+            print("^1HTTP Status Code: ^3" .. tostring(err) .. "^7")
+            print("^1Response Body: ^7")
+            print(tostring(text) or "No response body received.")
+            print("^1==========================================================^7")
+            -- Return stale cache rather than empty if we have it
+            TriggerClientEvent("Radiocast:ReceiveStations", src, stationsCache or {})
+        end
+    end, "GET", "", {
+        ["Authorization"] = "Bearer " .. ServerConfig.APIKey,
+        ["X-API-Key"] = ServerConfig.APIKey,
+        ["Accept"] = "application/json",
+        ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    })
 end)
 
 local VehicleRadios = {}
@@ -113,7 +123,7 @@ end)
 
 CreateThread(function()
     while true do
-        Wait(10000)
+        Wait(30000) -- Poll every 30s instead of 10s to reduce API load
         if ServerConfig.APIKey and ServerConfig.APIKey ~= "YOUR_API_KEY_HERE" then
             PerformHttpRequest("https://panel.radiocast.net/api/nowplaying", function(err, text, headers)
                 if err == 200 then
