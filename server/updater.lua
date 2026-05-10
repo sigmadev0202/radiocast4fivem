@@ -35,10 +35,13 @@ local function BroadcastNUI(payload)
 end
 
 local function DoRestart()
-    -- Proper FiveM way to refresh & restart a resource (no os.execute!)
-    ExecuteCommand("refresh")
-    Wait(500)
-    ExecuteCommand("ensure " .. GetCurrentResourceName())
+    -- Must run inside a CreateThread so Wait() has a coroutine context.
+    -- Calling Wait() directly inside a SetTimeout callback causes a SIGSEGV.
+    CreateThread(function()
+        ExecuteCommand("refresh")
+        Wait(500)
+        ExecuteCommand("ensure " .. GetCurrentResourceName())
+    end)
 end
 
 local function UpdateFiles(newVersion)
