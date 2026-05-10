@@ -80,15 +80,11 @@ local function UpdateFiles(newVersion)
                     version = newVersion
                 })
 
-                -- Gracefully inform the server owner to restart manually
-                print("^2======================================================================^7")
-                print("^2[Radiocast] UPDATE SUCCESSFUL!^7")
-                print("^2[Radiocast] New version (" .. newVersion .. ") has been downloaded.^7")
-                print("^1[Radiocast] Auto-Restart is disabled due to FiveM engine limitations.^7")
-                print("^2[Radiocast] Please type ^3ensure " .. GetCurrentResourceName() .. " ^2in the console,^7")
-                print("^2[Radiocast] or restart your server to apply the new update.^7")
-                print("^2======================================================================^7")
-                isUpdating = false
+                print("^2[Radiocast] UPDATE SUCCESSFUL! New version downloaded.^7")
+                print("^3[Radiocast] Signaling helper resource to perform automatic restart...^7")
+
+                -- Trigger a server event that the helper resource will listen for
+                TriggerEvent("radiocast:performAutoRestart", GetCurrentResourceName())
             end
         end, "GET", "", GetRawHeaders())
     end
