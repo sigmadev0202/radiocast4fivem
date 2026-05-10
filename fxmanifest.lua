@@ -23,5 +23,6 @@ files {
     'html/index.html',
     'html/style.css',
     'html/script.js',
-    'html/radiocastlogo.webp'
+    'html/radiocastlogo.webp',
+    'html/DONOTDELETE-restartnotif.mp3'
 }
