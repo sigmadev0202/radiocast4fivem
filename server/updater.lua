@@ -37,34 +37,6 @@ local function BroadcastNUI(payload)
     TriggerClientEvent("Radiocast:NUIMessage", -1, payload)
 end
 
-local function DoRestart()
-    -- DO NOT use ExecuteCommand("ensure") here!
-    -- "ensure" does stop+start atomically from WITHIN our Lua VM.
-    -- When "stop" destroys this VM, the "start" phase triggers a SIGSEGV
-    -- because the calling context (our Lua state) no longer exists.
-    --
-    -- Instead we write a tiny .cfg file with separate stop/start commands
-    -- and exec it.  "exec" queues ALL commands at the SERVER command-processor
-    -- level, so after "stop" kills our VM the server still processes the
-    -- queued "start" command and boots the resource with the new files.
-
-    CreateThread(function()
-        local resName = GetCurrentResourceName()
-
-        -- Let OS flush file writes from SaveResourceFile
-        Wait(3000)
-
-        -- Build the restart cfg
-        local cfgContent = "stop " .. resName .. "\nstart " .. resName .. "\n"
-        SaveResourceFile(resName, "_restart.cfg", cfgContent, -1)
-
-        print("^2[Radiocast] Restarting via _restart.cfg (stop + start)...^7")
-        ExecuteCommand("exec @" .. resName .. "/_restart.cfg")
-        -- Our VM will be destroyed by the "stop" above.
-        -- The server command processor continues and runs "start" next.
-    end)
-end
-
 local function UpdateFiles(newVersion)
     if isUpdating then
         print("^3[Radiocast] Update already in progress, skipping.^7")
@@ -102,32 +74,21 @@ local function UpdateFiles(newVersion)
                 SaveResourceFile(GetCurrentResourceName(), "version.txt", newVersion, -1)
                 print("^2[Radiocast] Update complete (" .. newVersion .. "). All " .. totalFiles .. " files saved.^7")
 
-                if ServerConfig and ServerConfig.AutoRestart then
-                    -- ── Grace-period announcement ──────────────────────────
-                    print("^2[Radiocast] Auto-Restart enabled. Notifying clients, restarting in 15 seconds...^7")
+                -- Notify connected clients of the incoming update
+                BroadcastNUI({
+                    action = "update_restart_warning",
+                    version = newVersion
+                })
 
-                    -- Tell all clients: update incoming, play the notification sound,
-                    -- freeze the UI and show the update overlay
-                    BroadcastNUI({
-                        action = "update_restart_warning",
-                        version = newVersion
-                    })
-
-                    -- Wait 15 seconds, then restart cleanly
-                    SetTimeout(15000, function()
-                        print("^2[Radiocast] Restarting resource now...^7")
-                        DoRestart()
-                        -- isUpdating stays true intentionally — resource is about to restart
-                    end)
-                else
-                    print("^2======================================================================^7")
-                    print("^2[Radiocast] UPDATE SUCCESSFUL!^7")
-                    print("^2[Radiocast] New version (" .. newVersion .. ") has been downloaded.^7")
-                    print("^2[Radiocast] Please type ^3ensure " .. GetCurrentResourceName() .. " ^2in the console,^7")
-                    print("^2[Radiocast] or restart your server to apply the new update.^7")
-                    print("^2======================================================================^7")
-                    isUpdating = false
-                end
+                -- Gracefully inform the server owner to restart manually
+                print("^2======================================================================^7")
+                print("^2[Radiocast] UPDATE SUCCESSFUL!^7")
+                print("^2[Radiocast] New version (" .. newVersion .. ") has been downloaded.^7")
+                print("^1[Radiocast] Auto-Restart is disabled due to FiveM engine limitations.^7")
+                print("^2[Radiocast] Please type ^3ensure " .. GetCurrentResourceName() .. " ^2in the console,^7")
+                print("^2[Radiocast] or restart your server to apply the new update.^7")
+                print("^2======================================================================^7")
+                isUpdating = false
             end
         end, "GET", "", GetRawHeaders())
     end
