@@ -2,6 +2,11 @@ local isUiOpen = false
 local currentVehicleRadio = nil
 local currentNetId = nil
 
+-- Generic server → NUI bridge (used by updater for restart warnings, etc.)
+RegisterNetEvent("Radiocast:NUIMessage", function(payload)
+    SendNUIMessage(payload)
+end)
+
 RegisterCommand(Config.CommandName, function()
     if isUiOpen then return end
     TriggerServerEvent("Radiocast:GetStations")
