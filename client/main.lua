@@ -2,6 +2,15 @@ local isUiOpen = false
 local currentVehicleRadio = nil
 local currentNetId = nil
 
+-- On resource start, reset the NUI to a clean state.
+-- FiveM's CEF frame often persists across resource restarts without reloading
+-- the HTML page, so JS state (overlays, timers, audio) from the previous
+-- session can survive and block the UI from opening.
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    SendNUIMessage({ action = "reset" })
+end)
+
 -- Generic server → NUI bridge (used by updater for restart warnings, etc.)
 RegisterNetEvent("Radiocast:NUIMessage", function(payload)
     SendNUIMessage(payload)

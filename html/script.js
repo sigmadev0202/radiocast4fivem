@@ -179,10 +179,56 @@ function destroyCarStream(netId) {
 window.addEventListener('message', (event) => {
     const data = event.data;
     
+    if (data.action === "reset") {
+        // --- Full state teardown (resource restarted while NUI frame persisted) ---
+        // Hide everything
+        app.style.display = "none";
+        settingsDropdown.style.display = "none";
+        carRadioHud.style.display = "none";
+        playerBar.style.display = "none";
+
+        // Kill update overlays that may have been shown before the restart
+        const updateOverlay = document.getElementById('update-overlay');
+        if (updateOverlay) updateOverlay.style.display = 'none';
+        const hudBanner = document.getElementById('hud-update-banner');
+        if (hudBanner) hudBanner.style.display = 'none';
+
+        // Stop all audio
+        radioAudio.pause();
+        radioAudio.src = '';
+        radioAudio.load();
+        stopMainAudioWatchdog();
+
+        // Destroy every 3D car stream
+        Object.keys(activeCarStreams).forEach(netIdStr => {
+            destroyCarStream(parseInt(netIdStr));
+            cancelStreamRetry(parseInt(netIdStr));
+        });
+
+        // Reset JS state variables
+        activeStation = null;
+        isPlaying = false;
+        currentCarStation = null;
+        allStations = [];
+        currentSearchQuery = "";
+        hideHud = false;
+        globalMute = false;
+        updatePlayPauseIcon();
+
+        return; // nothing else to do
+    }
+    
     if (data.action === "open") {
         allStations = data.stations || [];
         getAudioContext().resume().catch(() => {});
         app.style.display = "flex";
+
+        // Ensure update overlays from a previous session are hidden
+        const updateOverlay = document.getElementById('update-overlay');
+        if (updateOverlay) updateOverlay.style.display = 'none';
+        const hudBanner = document.getElementById('hud-update-banner');
+        if (hudBanner) hudBanner.style.display = 'none';
+
         if (data.inVehicle) {
             outputSelect.style.display = "block";
             vehicleOption.innerText = data.vehicleName || "Vehicle";
