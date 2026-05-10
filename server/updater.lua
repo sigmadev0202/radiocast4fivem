@@ -38,22 +38,30 @@ local function BroadcastNUI(payload)
 end
 
 local function DoRestart()
-    -- Must run inside a CreateThread so Wait() has a coroutine context.
-    -- Calling Wait() directly inside a SetTimeout callback causes a SIGSEGV.
+    -- DO NOT use ExecuteCommand("ensure") here!
+    -- "ensure" does stop+start atomically from WITHIN our Lua VM.
+    -- When "stop" destroys this VM, the "start" phase triggers a SIGSEGV
+    -- because the calling context (our Lua state) no longer exists.
+    --
+    -- Instead we write a tiny .cfg file with separate stop/start commands
+    -- and exec it.  "exec" queues ALL commands at the SERVER command-processor
+    -- level, so after "stop" kills our VM the server still processes the
+    -- queued "start" command and boots the resource with the new files.
+
     CreateThread(function()
-        -- DO NOT call ExecuteCommand("refresh") here!
-        -- "refresh" rescans EVERY resource on the server, which blocks the
-        -- server thread for 10-30+ seconds, causing all clients to timeout
-        -- and the server to crash.  It is also unnecessary: SaveResourceFile
-        -- already wrote the new files into the resource directory, and
-        -- "ensure" will re-read them when it restarts the resource.
-
-        -- Small settle delay to let the OS flush file writes
-        Wait(2000)
-
         local resName = GetCurrentResourceName()
-        print("^2[Radiocast] Executing: ensure " .. resName .. "^7")
-        ExecuteCommand("ensure " .. resName)
+
+        -- Let OS flush file writes from SaveResourceFile
+        Wait(3000)
+
+        -- Build the restart cfg
+        local cfgContent = "stop " .. resName .. "\nstart " .. resName .. "\n"
+        SaveResourceFile(resName, "_restart.cfg", cfgContent, -1)
+
+        print("^2[Radiocast] Restarting via _restart.cfg (stop + start)...^7")
+        ExecuteCommand("exec @" .. resName .. "/_restart.cfg")
+        -- Our VM will be destroyed by the "stop" above.
+        -- The server command processor continues and runs "start" next.
     end)
 end
 
