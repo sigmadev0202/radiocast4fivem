@@ -1,4 +1,4 @@
-# 🎙️ Radiocast FiveM Integration
+# 🎙️ Radiocast FiveM Integration [BETA]
 
 The official FiveM integration script for Radiocast. Access 20+ user-created radio stations with exceptional reliability (99.9%+ uptime) directly in your FiveM server.
 
