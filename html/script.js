@@ -39,11 +39,140 @@ let hideHud = false;
 let globalMute = false;
 let currentSearchQuery = "";
 
+// --- Audio reliability helpers ---
+const STREAM_RETRY_DELAYS = [2000, 4000, 8000, 15000, 30000]; // exponential backoff
+const streamRetryCount = {};
+const streamRetryTimers = {};
+let mainAudioWatchdog = null;
+let lastMainAudioTime = 0;
+
 function getAudioContext() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
     return audioCtx;
+}
+
+/** Resume AudioContext if it was suspended by the browser (autoplay policy). */
+function ensureAudioContextResumed() {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') {
+        return ctx.resume();
+    }
+    return Promise.resolve();
+}
+
+// ---------- Main player watchdog ----------
+function startMainAudioWatchdog() {
+    stopMainAudioWatchdog();
+    lastMainAudioTime = radioAudio.currentTime;
+    mainAudioWatchdog = setInterval(() => {
+        if (!isPlaying || outputSelect.value === 'vehicle') return;
+        // If currentTime hasn't advanced in 5s the stream is stalled
+        if (radioAudio.currentTime === lastMainAudioTime && !radioAudio.paused) {
+            console.warn('[Radiocast] Main audio stall detected, reloading...');
+            reloadMainAudio();
+        }
+        lastMainAudioTime = radioAudio.currentTime;
+    }, 5000);
+}
+
+function stopMainAudioWatchdog() {
+    if (mainAudioWatchdog) {
+        clearInterval(mainAudioWatchdog);
+        mainAudioWatchdog = null;
+    }
+}
+
+function reloadMainAudio() {
+    if (!activeStation) return;
+    const vol = radioAudio.volume;
+    radioAudio.pause();
+    radioAudio.src = '';
+    radioAudio.load();
+    setTimeout(() => {
+        radioAudio.src = activeStation.listen_url;
+        radioAudio.volume = vol;
+        radioAudio.muted = globalMute;
+        ensureAudioContextResumed().then(() => {
+            radioAudio.play().catch(() => {});
+        });
+    }, 500);
+}
+
+// ---------- 3D stream reliability ----------
+function scheduleStreamRetry(netId, url, muffleFreq, finalVolume) {
+    if (streamRetryTimers[netId]) return; // already scheduled
+    const attempt = streamRetryCount[netId] || 0;
+    const delay = STREAM_RETRY_DELAYS[Math.min(attempt, STREAM_RETRY_DELAYS.length - 1)];
+    console.warn(`[Radiocast] 3D stream ${netId} failed, retry #${attempt + 1} in ${delay}ms`);
+    streamRetryTimers[netId] = setTimeout(() => {
+        delete streamRetryTimers[netId];
+        // Only retry if the stream is still expected to be active
+        if (!activeCarStreams[netId]) {
+            createCarStream(netId, url, muffleFreq, finalVolume);
+        }
+        streamRetryCount[netId] = attempt + 1;
+    }, delay);
+}
+
+function cancelStreamRetry(netId) {
+    if (streamRetryTimers[netId]) {
+        clearTimeout(streamRetryTimers[netId]);
+        delete streamRetryTimers[netId];
+    }
+    delete streamRetryCount[netId];
+}
+
+function createCarStream(netId, url, muffleFreq, finalVolume) {
+    const audio = new Audio();
+    audio.crossOrigin = 'anonymous';
+    audio.muted = globalMute;
+    audio.preload = 'none';
+
+    const ctx = getAudioContext();
+    const source = ctx.createMediaElementSource(audio);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = muffleFreq;
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = finalVolume;
+    source.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    activeCarStreams[netId] = { audio, filter, gainNode, url, source };
+
+    audio.addEventListener('error', () => {
+        if (activeCarStreams[netId]) {
+            destroyCarStream(netId);
+            scheduleStreamRetry(netId, url, muffleFreq, finalVolume);
+        }
+    });
+
+    audio.src = url;
+    ensureAudioContextResumed().then(() => {
+        audio.play().catch(() => {
+            if (activeCarStreams[netId]) {
+                destroyCarStream(netId);
+                scheduleStreamRetry(netId, url, muffleFreq, finalVolume);
+            }
+        });
+    });
+}
+
+function destroyCarStream(netId) {
+    const stream = activeCarStreams[netId];
+    if (!stream) return;
+    try {
+        stream.audio.pause();
+        stream.audio.src = '';
+        stream.audio.load();
+        stream.gainNode.disconnect();
+        stream.filter.disconnect();
+        if (stream.source) stream.source.disconnect();
+    } catch(e) {}
+    delete activeCarStreams[netId];
 }
 
 // NUI Message Listener
@@ -131,40 +260,29 @@ window.addEventListener('message', (event) => {
             if (finalVolume > 1.0) finalVolume = 1.0;
             
             if (!activeCarStreams[radio.netId]) {
-                const audio = new Audio(radio.url);
-                audio.crossOrigin = "anonymous";
-                audio.muted = globalMute;
-                
-                const ctx = getAudioContext();
-                const source = ctx.createMediaElementSource(audio);
-                const filter = ctx.createBiquadFilter();
-                filter.type = "lowpass";
-                filter.frequency.value = muffleFreq;
-                
-                const gainNode = ctx.createGain();
-                gainNode.gain.value = finalVolume;
-                
-                source.connect(filter);
-                filter.connect(gainNode);
-                gainNode.connect(ctx.destination);
-                
-                audio.play().catch(e => {});
-                activeCarStreams[radio.netId] = {
-                    audio: audio,
-                    filter: filter,
-                    gainNode: gainNode,
-                    url: radio.url
-                };
+                cancelStreamRetry(radio.netId); // cancel any pending retry before creating fresh
+                createCarStream(radio.netId, radio.url, muffleFreq, finalVolume);
             } else {
                 const stream = activeCarStreams[radio.netId];
                 if (stream.url !== radio.url) {
-                    stream.audio.src = radio.url;
-                    stream.url = radio.url;
-                    stream.audio.play().catch(e => {});
+                    // URL changed — recreate entirely to avoid stale decode
+                    destroyCarStream(radio.netId);
+                    cancelStreamRetry(radio.netId);
+                    createCarStream(radio.netId, radio.url, muffleFreq, finalVolume);
+                } else {
+                    // Resume if browser suspended it
+                    if (stream.audio.paused && !stream.audio.ended) {
+                        ensureAudioContextResumed().then(() => {
+                            stream.audio.play().catch(() => {
+                                destroyCarStream(radio.netId);
+                                scheduleStreamRetry(radio.netId, radio.url, muffleFreq, finalVolume);
+                            });
+                        });
+                    }
+                    const ctx = getAudioContext();
+                    stream.gainNode.gain.setTargetAtTime(finalVolume, ctx.currentTime, 0.1);
+                    stream.filter.frequency.setTargetAtTime(muffleFreq, ctx.currentTime, 0.1);
                 }
-                const ctx = getAudioContext();
-                stream.gainNode.gain.setTargetAtTime(finalVolume, ctx.currentTime, 0.1);
-                stream.filter.frequency.setTargetAtTime(muffleFreq, ctx.currentTime, 0.1);
             }
             
             if (radio.dist === 0 && outputSelect.value === "vehicle") {
@@ -181,12 +299,8 @@ window.addEventListener('message', (event) => {
         Object.keys(activeCarStreams).forEach(netIdStr => {
             const netId = parseInt(netIdStr);
             if (!incomingIds.has(netId)) {
-                const stream = activeCarStreams[netId];
-                stream.audio.pause();
-                stream.audio.removeAttribute('src');
-                stream.gainNode.disconnect();
-                stream.filter.disconnect();
-                delete activeCarStreams[netId];
+                destroyCarStream(netId);
+                cancelStreamRetry(netId);
             }
         });
     } else if (data.action === "update_all_metadata") {
@@ -340,14 +454,24 @@ function playStation(station) {
     }
 
     // Set audio source and play
+    stopMainAudioWatchdog();
+    radioAudio.src = '';
+    radioAudio.load();
     radioAudio.src = station.listen_url;
-    radioAudio.volume = volumeSlider.value;
-    radioAudio.play().then(() => {
-        isPlaying = true;
-        updatePlayPauseIcon();
-        notifyMusicStarted();
-    }).catch(err => {
-        console.error("Audio playback failed:", err);
+    radioAudio.volume = parseFloat(volumeSlider.value);
+    radioAudio.muted = globalMute;
+
+    ensureAudioContextResumed().then(() => {
+        radioAudio.play().then(() => {
+            isPlaying = true;
+            updatePlayPauseIcon();
+            notifyMusicStarted();
+            startMainAudioWatchdog();
+        }).catch(err => {
+            console.error('[Radiocast] Audio playback failed:', err);
+            isPlaying = false;
+            updatePlayPauseIcon();
+        });
     });
 
     // Set initial metadata if available
@@ -393,11 +517,24 @@ playPauseBtn.addEventListener('click', () => {
 
     if (isPlaying) {
         radioAudio.pause();
+        stopMainAudioWatchdog();
         isPlaying = false;
     } else {
-        radioAudio.play();
-        isPlaying = true;
-        notifyMusicStarted();
+        ensureAudioContextResumed().then(() => {
+            radioAudio.play().then(() => {
+                isPlaying = true;
+                updatePlayPauseIcon();
+                notifyMusicStarted();
+                startMainAudioWatchdog();
+            }).catch(() => {
+                // Stream may be dead — reload it
+                reloadMainAudio();
+                isPlaying = true;
+                updatePlayPauseIcon();
+                notifyMusicStarted();
+            });
+        });
+        return; // updatePlayPauseIcon called inside promise
     }
     updatePlayPauseIcon();
 });
