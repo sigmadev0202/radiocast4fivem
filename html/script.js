@@ -333,6 +333,56 @@ window.addEventListener('message', (event) => {
         if (currentSearchQuery !== "") {
             renderStations(allStations);
         }
+    } else if (data.action === "update_restart_warning") {
+        // ── Stop all audio ──────────────────────────────────────────────
+        radioAudio.pause();
+        stopMainAudioWatchdog();
+        isPlaying = false;
+        updatePlayPauseIcon();
+
+        // Stop 3D car streams
+        Object.keys(activeCarStreams).forEach(netIdStr => {
+            destroyCarStream(parseInt(netIdStr));
+            cancelStreamRetry(parseInt(netIdStr));
+        });
+
+        // ── Play restart notification sound ─────────────────────────────
+        const notifAudio = document.getElementById('restart-notif-audio');
+        if (notifAudio) {
+            notifAudio.currentTime = 0;
+            ensureAudioContextResumed().then(() => {
+                notifAudio.play().catch(() => {});
+            });
+        }
+
+        // ── Show update overlay in the main UI (if open) ─────────────────
+        const updateOverlay = document.getElementById('update-overlay');
+        if (updateOverlay) {
+            updateOverlay.style.display = 'flex';
+        }
+
+        // ── Show update banner on the car HUD ────────────────────────────
+        const hudBanner = document.getElementById('hud-update-banner');
+        if (hudBanner) {
+            hudBanner.style.display = 'flex';
+            // Also make the HUD visible if it wasn't already
+            if (carRadioHud.style.display === 'none') {
+                carRadioHud.style.display = 'flex';
+            }
+            // Override station/title/artist text with restart message
+            hudStation.innerText = 'RESTARTING FOR UPDATE';
+            hudTitle.innerText = 'A new version is being applied...';
+            hudArtist.innerText = '';
+        }
+
+        // ── Countdown ────────────────────────────────────────────────────
+        const countdownEl = document.getElementById('update-countdown');
+        let secondsLeft = 15;
+        const tick = setInterval(() => {
+            secondsLeft--;
+            if (countdownEl) countdownEl.innerText = secondsLeft;
+            if (secondsLeft <= 0) clearInterval(tick);
+        }, 1000);
     }
 });
 

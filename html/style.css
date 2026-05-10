@@ -307,6 +307,8 @@ body {
     z-index: 9999;
     max-width: 350px;
     animation: slideIn 0.3s ease-out;
+    /* needed so the update-banner overlay can be positioned inside */
+    overflow: hidden;
 }
 
 @keyframes slideIn {
@@ -370,4 +372,9 @@ body {
 @keyframes scrollText {
     0%, 15% { transform: translateX(0); }
     85%, 100% { transform: translateX(var(--scroll-dist)); }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
 }

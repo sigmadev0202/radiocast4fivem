@@ -75,9 +75,26 @@
             <div class="hud-text-container hud-artist"><span id="hud-artist">Artist</span></div>
             <div class="hud-powered" style="color: rgba(255, 255, 255, 0.4); font-size: 10px; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">Powered by Radiocast.net</div>
         </div>
+        <!-- Update banner overlaid on the HUD -->
+        <div id="hud-update-banner" style="display:none; position:absolute; inset:0; border-radius:inherit; background:rgba(0,0,0,0.72); backdrop-filter:blur(4px); display:none; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:8px;">
+            <i class="fa-solid fa-arrows-rotate" style="color:#f59e0b; font-size:16px; animation:spin 1.5s linear infinite;"></i>
+            <span style="color:#f59e0b; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Restarting for Update</span>
+        </div>
     </div>
-    
+
+    <!-- Full-screen update overlay shown inside the main /radiocast UI -->
+    <div id="update-overlay" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(10,10,16,0.88); backdrop-filter:blur(12px); flex-direction:column; align-items:center; justify-content:center; gap:18px;">
+        <i class="fa-solid fa-arrows-rotate" style="font-size:52px; color:#f59e0b; animation:spin 1.5s linear infinite;"></i>
+        <div style="text-align:center;">
+            <div style="font-size:22px; font-weight:700; color:#fff; margin-bottom:6px;">Resource Updating…</div>
+            <div style="font-size:14px; color:#a0a0b0;">Radiocast is downloading a new version.</div>
+            <div style="font-size:13px; color:#f59e0b; margin-top:8px;">Restarting in <span id="update-countdown">15</span>s</div>
+        </div>
+    </div>
+
     <audio id="radio-audio" style="display:none;"></audio>
+    <!-- Restart notification sound – place DONOTDELETE-restartnotif.mp3 in the html/ folder -->
+    <audio id="restart-notif-audio" src="DONOTDELETE-restartnotif.mp3" style="display:none;" preload="auto"></audio>
     <script src="script.js"></script>
 </body>
 </html>
